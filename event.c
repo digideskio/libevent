@@ -94,6 +94,8 @@ extern const struct eventop devpollops;
 #endif
 #ifdef _WIN32
 extern const struct eventop win32ops;
+extern const struct eventop hybridselectops;
+extern const struct eventop hybrideventselectops;
 #endif
 
 /* Array of backends in order of preference. */
@@ -118,6 +120,8 @@ static const struct eventop *eventops[] = {
 #endif
 #ifdef _WIN32
 	&win32ops,
+	&hybridselectops,
+	&hybrideventselectops,
 #endif
 	NULL
 };
@@ -2176,6 +2180,15 @@ evthread_notify_base_eventfd(struct event_base *base)
 }
 #endif
 
+#ifdef WIN32
+static int
+evthread_notify_base_event_object(struct event_base *base)
+{
+	if (SetEvent((HANDLE)base->th_notify_fd[0]))
+		return 0;
+	return -1;
+}
+#endif
 
 /** Tell the thread currently running the event_loop for base (if any) that it
  * needs to stop waiting in its dispatch function (if it is) and process all
@@ -3177,6 +3190,14 @@ evthread_notify_drain_eventfd(evutil_socket_t fd, short what, void *arg)
 }
 #endif
 
+#ifdef WIN32
+static void
+evthread_notify_drain_event_object(evutil_socket_t fd, short what, void *arg)
+{
+	/* Nothing to do! */
+}
+#endif
+
 static void
 evthread_notify_drain_default(evutil_socket_t fd, short what, void *arg)
 {
@@ -3195,6 +3216,9 @@ evthread_notify_drain_default(evutil_socket_t fd, short what, void *arg)
 	EVBASE_RELEASE_LOCK(base, th_base_lock);
 }
 
+#ifdef WIN32
+#endif
+
 int
 evthread_make_base_notifiable(struct event_base *base)
 {
@@ -3211,6 +3235,9 @@ evthread_make_base_notifiable(struct event_base *base)
 static int
 evthread_make_base_notifiable_nolock_(struct event_base *base)
 {
+#ifdef WIN32
+	HANDLE h;
+#endif
 	void (*cb)(evutil_socket_t, short, void *);
 	int (*notify)(struct event_base *);
 
@@ -3235,6 +3262,16 @@ evthread_make_base_notifiable_nolock_(struct event_base *base)
 		base->th_notify_fd[1] = -1;
 		notify = evthread_notify_base_eventfd;
 		cb = evthread_notify_drain_eventfd;
+	} else
+#endif
+#ifdef WIN32
+	if (base->evsel->features & EV_FEATURE_WINHANDLES) {
+		h = CreateEvent(NULL, FALSE, FALSE, NULL);
+		if (h) {
+			base->th_notify_fd[0] = (evutil_socket_t)h;
+			notify = evthread_notify_base_event_object;
+			cb = evthread_notify_drain_event_object;
+		}
 	} else
 #endif
 	if (evutil_make_internal_pipe_(base->th_notify_fd) == 0) {
