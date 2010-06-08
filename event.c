@@ -618,6 +618,9 @@ event_base_new_with_config(const struct event_config *cfg)
 
 	for (i = 0; eventops[i] && !base->evbase; i++) {
 		if (cfg != NULL) {
+			if (cfg->required_method &&
+			    strcmp(cfg->required_method, eventops[i]->name))
+				continue;
 			/* determine if this backend should be avoided */
 			if (event_config_is_avoided_method(cfg,
 				eventops[i]->name))
@@ -1025,6 +1028,8 @@ event_config_free(struct event_config *cfg)
 		TAILQ_REMOVE(&cfg->entries, entry, next);
 		event_config_entry_free(entry);
 	}
+	if (cfg->required_method)
+		mm_free((char*)cfg->required_method);
 	mm_free(cfg);
 }
 
@@ -1034,6 +1039,18 @@ event_config_set_flag(struct event_config *cfg, int flag)
 	if (!cfg)
 		return -1;
 	cfg->flags |= flag;
+	return 0;
+}
+
+int
+event_config_require_method(struct event_config *cfg, const char *method)
+{
+	if (cfg->required_method)
+		mm_free((char*)cfg->required_method);
+	cfg->required_method = mm_strdup(method);
+	if (!cfg->required_method)
+		return -1;
+
 	return 0;
 }
 

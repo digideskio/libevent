@@ -419,6 +419,19 @@ void event_config_free(struct event_config *cfg);
 int event_config_avoid_method(struct event_config *cfg, const char *method);
 
 /**
+   Require a specific event method be used.
+
+   Use this to force Libevent to run the event method supporting the features
+   you need. The environment is ignored, and only one required method may be
+   specified.
+
+   @param cfg the event configuration object
+   @param method the event method to require
+   @return 0 on success, -1 on failure.
+*/
+int event_config_require_method(struct event_config *cfg, const char *method);
+
+/**
    A flag used to describe which features an event_base (must) provide.
 
    Because of OS limitations, not every Libevent backend supports every
