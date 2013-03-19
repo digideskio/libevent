@@ -24,7 +24,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "event-config.h"
+#include "event2/event-config.h"
+#include "evconfig-private.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,9 +33,9 @@
 #include <errno.h>
 #include <limits.h>
 
-#include <windows.h>
+#include <winsock2.h>
 #include <mswsock.h>
-#include <winsock.h>
+#include <windows.h>
 #include <process.h>
 #include <sys/queue.h>
 
