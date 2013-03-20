@@ -572,7 +572,7 @@ poll_thread_post(struct poll_thread *poll_thr, DWORD i)
 
 	if ((what.lNetworkEvents & FD_CONNECT) &&
 	    hev->type == HYBRID_SOCK_UNCONNECTED &&
-	    evutil_socket_finished_connecting(hev->sock) == 1) {
+	    evutil_socket_finished_connecting_(hev->sock) == 1) {
 		hev->type = HYBRID_SOCK_TCP;
 		hybrid_event_update_event_selection(hev);
 	}
@@ -1090,7 +1090,7 @@ hybrid_handle_event(struct event_base *base, struct hybrid_event *hev,
 		return;
 
 	if (!(hev->flags & HYBRID_CANCEL)) {
-		evmap_io_active(base, hev->sock, what);
+		evmap_io_active_(base, hev->sock, what);
 		ctx->nactivated++;
 	}
 
@@ -1111,7 +1111,7 @@ hybrid_flush_queue(struct event_base *base)
 	short what;
 
 	TAILQ_FOREACH(hev, &ctx->closed_sockets, next) {
-		evmap_io_active(base, hev->sock, EV_READ);
+		evmap_io_active_(base, hev->sock, EV_READ);
 		ctx->nactivated++;
 	}
 
@@ -1173,7 +1173,7 @@ hybrid_loop_ctx_new(struct event_base *base)
 	TAILQ_INIT(&ctx->closed_sockets);
 	ctx->iocp = iocp;
 	ctx->base = base;
-	evsig_init(base);
+	evsig_init_(base);
 
 	return ctx;
 }
@@ -1235,7 +1235,7 @@ hybrid_loop_dispatch(struct event_base *base, struct timeval *tv)
 			return 0;
 
 		if (tv) {
-			long msec = evutil_tv_to_msec(tv);
+			long msec = evutil_tv_to_msec_(tv);
 			if (msec < 0)
 				msec = LONG_MAX;
 			ms = msec;
