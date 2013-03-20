@@ -1253,9 +1253,6 @@ hybrid_loop_dispatch(struct event_base *base, struct timeval *tv)
 		}
 	}
 
-	if (!ctx->nactivated || base->sig.evsig_caught)
-		evsig_process(base);
-
 	return rv;
 }
 
